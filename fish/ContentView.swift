@@ -9,16 +9,49 @@ import SwiftUI
 
 struct ContentView: View {
     var body: some View {
-        VStack {
-            Image(systemName: "globe")
-                .imageScale(.large)
-                .foregroundStyle(.tint)
-            Text("Hello, world!")
+        ZStack{
+            LinearGradient(
+                colors: [.clear, .blue.opacity(0.3)],
+                startPoint: .top,
+                endPoint: .center
+            ).ignoresSafeArea()
+            VStack {
+                Spacer()
+                Button(
+                    action:{}
+                ){
+                    Image("pink").resizable()
+                        .scaledToFit()
+                        .foregroundColor(Color.red)}
+
+                Spacer()
+                Button(
+                    action:{}
+                ){
+                    Image("green").resizable()
+                        .scaledToFit()
+                        .foregroundColor(Color.red)}
+                Spacer()
+
+//                Button(action: {
+//                            print("")
+//                        }) {
+//                            Image(systemName: "fish")
+//                                .font(.system(size: 50))
+//                                .foregroundColor(Color.red)
+//                                .rotationEffect(Angle(degrees:-90))
+//                        }
+                
+            }
         }
-        .padding()
+        
     }
 }
 
+
+
 #Preview {
-    ContentView()
+   ContentView()
 }
+
+
