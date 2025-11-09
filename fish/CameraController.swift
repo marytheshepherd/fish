@@ -4,33 +4,41 @@ import Combine
 import CoreML
 
 final class CameraController: NSObject, ObservableObject {
-    let session = AVCaptureSession()
+    // Published value observed by SwiftUI
     @Published var detectedLabel: String = "—"
+    @Published var isActive: Bool = true
 
+
+    // Capture session setup
+    let session = AVCaptureSession()
     private let output = AVCaptureVideoDataOutput()
     private let queue = DispatchQueue(label: "camera.video.queue")
-   
-    
-    //my ML Model_trained
+
+    // Core ML model
     private lazy var gestureModel: VNCoreMLModel = {
         guard let modelURL = Bundle.main.url(forResource: "RPSImageClassifier", withExtension: "mlmodelc") else {
             fatalError("Model not found in bundle.")
         }
-
         let mlModel = try! MLModel(contentsOf: modelURL)
         return try! VNCoreMLModel(for: mlModel)
     }()
 
+    // Prediction smoothing
+    private var recentPredictions: [String] = []
+    private var lastPredictionTime = Date()
 
+    //Init
     override init() {
         super.init()
         setupSession()
     }
 
+    //Camera setup
     private func setupSession() {
         session.beginConfiguration()
         session.sessionPreset = .high
 
+        // Use the back camera
         guard
             let device = AVCaptureDevice.default(.builtInWideAngleCamera, for: .video, position: .back),
             let input = try? AVCaptureDeviceInput(device: device),
@@ -38,6 +46,7 @@ final class CameraController: NSObject, ObservableObject {
         else { return }
         session.addInput(input)
 
+        // Configure frame output
         output.setSampleBufferDelegate(self, queue: queue)
         output.alwaysDiscardsLateVideoFrames = true
         if session.canAddOutput(output) { session.addOutput(output) }
@@ -45,6 +54,7 @@ final class CameraController: NSObject, ObservableObject {
         session.commitConfiguration()
     }
 
+    // MARK: - Control
     func start() {
         guard !session.isRunning else { return }
         DispatchQueue.global(qos: .userInitiated).async {
@@ -58,31 +68,52 @@ final class CameraController: NSObject, ObservableObject {
             self.session.stopRunning()
         }
     }
-
 }
 
+// MARK: - Capture delegate
 extension CameraController: AVCaptureVideoDataOutputSampleBufferDelegate {
     func captureOutput(_ output: AVCaptureOutput,
                        didOutput sampleBuffer: CMSampleBuffer,
                        from connection: AVCaptureConnection) {
 
+        
         guard let pixelBuffer = CMSampleBufferGetImageBuffer(sampleBuffer) else { return }
 
-        //Vision request using model
-        let request = VNCoreMLRequest(model: gestureModel) { request, _ in
-            if let results = request.results as? [VNClassificationObservation],
-               let top = results.first {
-                DispatchQueue.main.async {
-                    // UI predicted label
-                    self.detectedLabel = top.identifier.capitalized
+        // Build Vision request
+        
+        let request = VNCoreMLRequest(model: gestureModel) { [weak self] request, _ in
+            guard let self = self,
+                  let results = request.results as? [VNClassificationObservation],
+                  let top = results.first else { return }
+
+            // Perform smoothing on the camera queue (background)
+            let prediction = top.identifier.lowercased()
+            self.recentPredictions.append(prediction)
+            if self.recentPredictions.count > 10 {
+                self.recentPredictions.removeFirst()
+            }
+
+            let counts = Dictionary(grouping: self.recentPredictions, by: { $0 })
+                .mapValues { $0.count }
+
+            if let (mostCommon, count) = counts.max(by: { $0.value < $1.value }),
+               count >= 7 {
+                let now = Date()
+                if now.timeIntervalSince(self.lastPredictionTime) > 2 {
+                    self.lastPredictionTime = now
+                    self.recentPredictions.removeAll()
+
+                    // Post clean update to SwiftUI on main thread
+                    DispatchQueue.main.async {
+                        self.detectedLabel = mostCommon.capitalized
+                    }
                 }
             }
         }
-        request.imageCropAndScaleOption = .scaleFit
 
-        //Running on current frame
-        let handler = VNImageRequestHandler(cvPixelBuffer: pixelBuffer, orientation: .up)
-        try? handler.perform([request])
-    }
-}
+        // Run Vision model off the main thread
+                let handler = VNImageRequestHandler(cvPixelBuffer: pixelBuffer, orientation: .up)
+                try? handler.perform([request])
+            }
+        }
 

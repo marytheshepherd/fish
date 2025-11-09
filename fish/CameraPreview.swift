@@ -12,10 +12,10 @@ struct CameraPreview: UIViewRepresentable {
         previewLayer.videoGravity = .resizeAspectFill
 
         
-        if let connection = previewLayer.connection, connection.isVideoMirroringSupported {
-//            connection.automaticallyAdjustsVideoMirroring = false
-//            connection.isVideoMirrored = true
-        }
+//        if let connection = previewLayer.connection, connection.isVideoMirroringSupported {
+////            connection.automaticallyAdjustsVideoMirroring = false
+////            connection.isVideoMirrored = true
+//        }
 
       
         DispatchQueue.main.async {

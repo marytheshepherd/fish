@@ -14,46 +14,49 @@ struct ContentView: View {
     
     var body: some View {
         NavigationStack{
-            VStack{
-                Spacer()
-                
-                Image("green").resizable().scaledToFit().offset(x:moveFish ? 500:0)
-                    .animation(.easeInOut(duration: 2), value:moveFish)
-                
-                Button(action: {
-                        withAnimation {
-                            moveFish = true
-                        }
-                        
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
-                            goNext = true
-                        }
-                    }) {
-                        Text("Start")
-                            .font(.title.bold())
-                            .padding(.horizontal, 40)
-                            .padding(.vertical, 14)
-                            .background(Color.blue)
-                            .foregroundColor(.white)
-                            .cornerRadius(12)
+            ZStack{
+                Color.white.ignoresSafeArea()
+                VStack{
+                    Spacer()
+                    
+                    Image("green").resizable().scaledToFit().offset(x:moveFish ? 500:0)
+                        .animation(.easeInOut(duration: 2), value:moveFish)
+                    
+                    Button(action: {
+                            withAnimation {
+                                moveFish = true
+                            }
                             
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+                                goNext = true
+                            }
+                        }) {
+                            Text("Start")
+                                .font(.title.bold())
+                                .padding(.horizontal, 40)
+                                .padding(.vertical, 14)
+                                .background(Color.blue)
+                                .foregroundColor(.white)
+                                .cornerRadius(12)
+                                
+                        }
+                        .navigationDestination(isPresented: $goNext) {
+                            GameInterface()
+                        .padding(.bottom, 60)
+                        
                     }
-                    .navigationDestination(isPresented: $goNext) {
-                        GameInterface()
-                    .padding(.bottom, 60)
+                        
                     
+                    Image("pink").resizable().scaledToFit().offset(x:moveFish ? -500:0)
+                        .animation(.easeInOut(duration: 2), value:moveFish)
+                    
+                    Spacer()
+                    }.onAppear{
+                        moveFish = false
+                        goNext = false
                 }
-                    
-                
-                Image("pink").resizable().scaledToFit().offset(x:moveFish ? -500:0)
-                    .animation(.easeInOut(duration: 2), value:moveFish)
-                
-                Spacer()
-                }.onAppear{
-                    moveFish = false
-                    goNext = false
+                    }
             }
-                }
     }
 }
 
