@@ -70,7 +70,7 @@ final class CameraController: NSObject, ObservableObject {
     }
 }
 
-// MARK: - Capture delegate
+//Capture delegate
 extension CameraController: AVCaptureVideoDataOutputSampleBufferDelegate {
     func captureOutput(_ output: AVCaptureOutput,
                        didOutput sampleBuffer: CMSampleBuffer,
@@ -111,7 +111,7 @@ extension CameraController: AVCaptureVideoDataOutputSampleBufferDelegate {
             }
         }
 
-        // Run Vision model off the main thread
+        // Run Vision model in main thread
                 let handler = VNImageRequestHandler(cvPixelBuffer: pixelBuffer, orientation: .up)
                 try? handler.perform([request])
             }

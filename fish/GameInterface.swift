@@ -14,7 +14,7 @@ struct GameInterface: View {
 
     var body: some View {
         ZStack {
-            Color.white.ignoresSafeArea(edges: .all)
+            Color.white.ignoresSafeArea()
             VStack(spacing: 30) {
     
                 Text("Highest streak achieved: \(streak.highestStreak)")

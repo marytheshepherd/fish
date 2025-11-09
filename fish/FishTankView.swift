@@ -1,5 +1,3 @@
-//fish race
-
 import SwiftUI
 
 struct FishTankView: View {
